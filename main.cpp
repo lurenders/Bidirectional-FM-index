@@ -7,27 +7,7 @@
 
 using namespace std;
 
-// try to find the word that encompasses this range (for words seperated by %
-// signs)
-string findWordWithRange(Range& range, const string& text) {
-    length_t start = 0;
-    length_t end = text.size();
-    for (length_t i = range.begin; i-- > 0;) {
-        if (text[i] == '%') {
-            start = i + 1;
-            break;
-        }
-    }
 
-    for (length_t i = range.end; i <= text.size(); i++) {
-        if (text[i] == '%') {
-            end = i;
-            break;
-        }
-    }
-
-    return text.substr(start, end - start);
-}
 
 void printMatches(vector<AppMatch> matches, string text, bool printLine,
                   string duration, BWT* mapper, string name) {
@@ -50,120 +30,11 @@ void printMatches(vector<AppMatch> matches, string text, bool printLine,
              << text.substr(match.range.begin,
                             match.range.end - match.range.begin)
              << endl;
-        if (printLine) {
-            cout << "\tCorresponding word:\t"
-                 << findWordWithRange(match.range, text) << endl;
-        }
+        
     }
 }
 
-void outputForMapper(BiBWT* mapper, bool print, bool depth) {
-    cout << "Recompute the original text for displaying " << endl;
-    // this can take a long time, but is not necessary for the program
-    // this is only for displaying and debugging purposes. The BWT does not need
-    // the text to do its magic
-    string text = mapper->getText();
-    if (print) {
-        cout << "Original text:\t" << text << endl;
-    }
-    cout << "Length of text = " << text.size() << endl;
-    string input;
-    vector<AppMatch> matches;
 
-    cout << "Type string to match or 0000 to stop" << endl;
-    cin >> input;
-
-    PigeonHoleSearchStrategy pigeon = PigeonHoleSearchStrategy(mapper);
-    O1StarSearchStrategy O1star = O1StarSearchStrategy(mapper);
-    KucherovKplus1 kucherov = KucherovKplus1(mapper);
-    int ED = 2;
-    while (input.compare("0000") != 0) {
-        cout << "Approximate matches for " << input << " with max ED " << ED
-             << endl;
-
-        auto t1 = chrono::high_resolution_clock::now();
-        matches = ((BWT*)mapper)->approxMatches(input, ED);
-        auto t2 = chrono::high_resolution_clock::now();
-
-        auto duration =
-            chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
-        string d = to_string(duration);
-        printMatches(matches, text, print, d, mapper, "NAIVE BACKWARD");
-
-        t1 = chrono::high_resolution_clock::now();
-        matches = mapper->approxMatches(input, ED, false);
-        t2 = chrono::high_resolution_clock::now();
-
-        duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
-        d = to_string(duration);
-        printMatches(matches, text, print, d, mapper, "Bidirectional BACKWARD");
-
-        t1 = chrono::high_resolution_clock::now();
-        matches = mapper->approxMatches(input, ED, true);
-        t2 = chrono::high_resolution_clock::now();
-
-        duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
-        d = to_string(duration);
-        printMatches(matches, text, print, d, mapper, "Bidirectional FORWARD");
-
-        t1 = chrono::high_resolution_clock::now();
-        if (depth) {
-            matches = pigeon.matchApproxDepthFirst(input, ED);
-        } else {
-            matches = pigeon.matchApprox(input, ED);
-        }
-        t2 = chrono::high_resolution_clock::now();
-        duration = chrono::duration_cast<chrono::microseconds>(t2 - t1).count();
-        d = to_string(duration);
-        printMatches(matches, text, print, d, mapper, "PIGEON");
-
-        /** t1 =  chrono::high_resolution_clock::now();
-         matches = O1star.matchApprox(input, ED);
-         t2 =  chrono::high_resolution_clock::now();
-         duration =
-              chrono::duration_cast< chrono::microseconds>(t2 - t1)
-                 .count();
-         d =  to_string(duration);
-         printMatches(matches, text, print, d, mapper, "O1*0");
-
-         t1 =  chrono::high_resolution_clock::now();
-         matches = kucherov.matchApprox(input, ED);
-         t2 =  chrono::high_resolution_clock::now();
-         duration =
-              chrono::duration_cast< chrono::microseconds>(t2 - t1)
-                 .count();
-         d =  to_string(duration);
-         printMatches(matches, text, print, d, mapper, "Kucherov");*/
-
-        cout << endl;
-
-        cout << "Type string to match or 0000 to stop" << endl;
-        cin >> input;
-    }
-}
-
-void printHelp() {
-    cout << "This program takes a few inputs. The first input is required: it "
-            "is the "
-            "prefix of the files that will be used, the extensions "
-            "needed for this prefix are .txt .rev.txt .sa and .rev.sa"
-         << endl;
-    cout << endl;
-    cout << "the following flags are optional" << endl;
-    cout << "\t"
-         << "--sparse"
-         << "\t\t"
-         << "to set a sparseness "
-            "value for the suffix array add --sparse flag and the value"
-         << endl;
-    cout << "\t-depth\t\t"
-         << "Add this flag to test the depth first search" << endl;
-
-    cout << "\t--reads\t\t"
-         << "Add this flag to specify the prefix of the file containing the "
-            "reads (without the _counts_250.csv)"
-         << endl;
-}
 
 map<int, vector<string>> getReads(const string& file) {
     map<int, vector<string>> reads;
@@ -259,7 +130,7 @@ void doBench(map<int, vector<string>>& reads, BiBWT* mapper,
             subDuration = 0;
         }
 
-        // stoi is the problem -> string to unsigned long should probably be
+       
         length_t originalPos = (length_t)stoull(reads[100][i - 1]);
 
         bool originalFound = false;
@@ -428,7 +299,7 @@ int main(int argc, char* argv[]) {
     string depth = (depthFirst) ? "with" : "without";
     cout << "searching " << depth << " depth first" << endl;
 
-    // check if the sparse factors are ints
+    
     string prefix = argv[argc - 2];
     string readsFile = argv[argc - 1];
 
@@ -439,5 +310,5 @@ int main(int argc, char* argv[]) {
     BiBWT bwt = BiBWT(prefix, saSF);
     benchmark(reads, &bwt, depthFirst, readPosCorrect, ed);
 
-    // outputForMapper(&bwt, true, depthFirst);
+    
 }
