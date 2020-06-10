@@ -6,8 +6,13 @@
 #include "customtypedefs.h"
 
 void printHelp() {
-    // TODO
-    std::cout << "fail";
+    
+        std::cout << "Usage: ./BWT_build <base filename>\n\n";
+        std::cout << "Following files are required:\n";
+        std::cout << "\t<base filename>.txt: input text T\n";
+        std::cout << "\t<base filename>.sa: suffix array of T\n";
+        std::cout << "\t<base filename>.rev.sa: suffix array of reverse of T\n\n";
+ 
 }
 
 void createBWT(const std::string& text, const std::vector<length_t>& sa,
@@ -206,6 +211,7 @@ int main(int argc, char* argv[]) {
         createIndex(name, output);
     } catch (const std::exception& e) {
         std::cerr << "Error while creating index: " << e.what() << std::endl;
+        printHelp();
         return EXIT_FAILURE;
     }
     std::cout << "successs" << std::endl;
